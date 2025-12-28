@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendance Quest - Local Storage</title>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background: #eef2f7; text-align: center; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .btn-checkin { background: #4CAF50; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; transition: 0.3s; }
+        .btn-checkin:hover { background: #45a049; transform: scale(1.05); }
+        .stats { margin: 20px 0; font-size: 20px; color: #333; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+        .badge { background: #ffd700; padding: 5px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎮 Attendance Quest</h1>
+    <p>Selamat Datang, <strong id="student-name">Pelajar 1</strong></p>
+    
+    <div class="stats">
+        Mata XP: <span id="xp-display">0</span> ⭐
+    </div>
+
+    <button class="btn-checkin" onclick="performCheckin()">Misi: Hadir Kelas</button>
+    <p id="msg"></p>
+
+    <hr>
+
+    <h3>🏆 Leaderboard (Ranking)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Nama</th>
+                <th>XP</th>
+                <th>Tahap</th>
+            </tr>
+        </thead>
+        <tbody id="leaderboard-body">
+            </tbody>
+    </table>
+    
+    <button onclick="resetData()" style="margin-top: 20px; font-size: 10px; opacity: 0.5;">Reset Semua Data</button>
+</div>
+
+
+
+<script>
+    // 1. Inisialisasi Data (Jika tiada dalam LocalStorage, buat baru)
+    let gameData = JSON.parse(localStorage.getItem('quest_data')) || {
+        currentUser: { id: 1, name: "Pelajar 1", xp: 0 },
+        attendanceLog: []
+    };
+
+    // 2. Fungsi Papar Data
+    function updateUI() {
+        document.getElementById('xp-display').innerText = gameData.currentUser.xp;
+        
+        // Kemaskini Leaderboard (Simulasi)
+        const tbody = document.getElementById('leaderboard-body');
+        tbody.innerHTML = `
+            <tr>
+                <td>${gameData.currentUser.name} (Anda)</td>
+                <td>${gameData.currentUser.xp}</td>
+                <td><span class="badge">${getBadge(gameData.currentUser.xp)}</span></td>
+            </tr>
+            <tr><td>Alif (Bot)</td><td>50</td><td>Novice</td></tr>
+            <tr><td>Sarah (Bot)</td><td>30</td><td>Novice</td></tr>
+        `;
+        
+        // Simpan setiap kali ada perubahan
+        localStorage.setItem('quest_data', JSON.stringify(gameData));
+    }
+
+    // 3. Logik Tentukan Badge
+    function getBadge(xp) {
+        if (xp >= 100) return "Master";
+        if (xp >= 50) return "Warrior";
+        return "Novice";
+    }
+
+    // 4. Fungsi Check-in
+    function performCheckin() {
+        const today = new Date().toDateString();
+        
+        if (gameData.attendanceLog.includes(today)) {
+            document.getElementById('msg').innerText = "❌ Anda sudah hadir hari ini!";
+            document.getElementById('msg').style.color = "red";
+        } else {
+            gameData.currentUser.xp += 10;
+            gameData.attendanceLog.push(today);
+            document.getElementById('msg').innerText = "✅ Tahniah! +10 XP Berjaya!";
+            document.getElementById('msg').style.color = "green";
+            updateUI();
+        }
+    }
+
+    // Fungsi Reset (Untuk tujuan testing)
+    function resetData() {
+        localStorage.removeItem('quest_data');
+        location.reload();
+    }
+
+    // Jalankan paparan awal
+    updateUI();
+</script>
+
+</body>
+</html>
