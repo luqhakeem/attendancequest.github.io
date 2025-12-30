@@ -2,111 +2,219 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <title>Attendance Quest - Local Storage</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Quest</title>
     <style>
-        body { font-family: 'Poppins', sans-serif; background: #eef2f7; text-align: center; padding: 20px; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .btn-checkin { background: #4CAF50; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; transition: 0.3s; }
-        .btn-checkin:hover { background: #45a049; transform: scale(1.05); }
-        .stats { margin: 20px 0; font-size: 20px; color: #333; }
-        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        th, td { padding: 10px; border-bottom: 1px solid #ddd; }
-        th { background: #f8f9fa; }
-        .badge { background: #ffd700; padding: 5px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+        :root { --primary: #4a90e2; --success: #2ecc71; --admin: #e74c3c; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 550px; text-align: center; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        button:hover { opacity: 0.9; transform: scale(0.98); background: #eee; }
+        .btn-login { background: var(--primary); color: white; }
+        .btn-checkin { background: var(--success); color: white; margin-bottom: 15px; font-size: 1.1rem; }
+        .user-card { background: #e8f4fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--primary); }
+        .xp-display { font-size: 2.2rem; color: var(--primary); font-weight: bold; }
+        .hidden { display: none; }
+        table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 0.85rem; background: white; }
+        table th, table td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        .row-present { background: #eaffea !important; }
+        .note-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #ddd; background: #fffbe6; }
+        .note-done { background: #f0f0f0; border-color: #eee; color: #888; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎮 Attendance Quest</h1>
-    <p>Selamat Datang, <strong id="student-name">Pelajar 1</strong></p>
-    
-    <div class="stats">
-        Mata XP: <span id="xp-display">0</span> ⭐
+    <div id="auth-section">
+        <h2>🎮 Attendance Quest</h2>
+        <p>Log masuk untuk mula mengumpul mata XP</p>
+        <input type="text" id="username" placeholder="Nama Pengguna">
+        <input type="password" id="password" placeholder="Katalaluan (Admin Sahaja)">
+        <button class="btn-login" onclick="handleAuth()">Masuk / Daftar</button>
     </div>
 
-    <button class="btn-checkin" onclick="performCheckin()">Misi: Hadir Kelas</button>
-    <p id="msg"></p>
+    <div id="game-section" class="hidden">
+        <div class="user-card">
+            <h3 id="display-name">---</h3>
+            <div class="xp-display"><span id="display-xp">0</span> ⭐</div>
+            <div id="badge-rank" style="font-weight: bold; color: #666;">Novice</div>
+        </div>
 
-    <hr>
+        <button class="btn-checkin" onclick="checkIn()">Misi: Hadir Hari Ini (+10 XP)</button>
+        
+        <div style="text-align: left; margin-top: 20px;">
+            <h4>📚 Bahan Belajar (XP Tambahan)</h4>
+            <div id="notes-list"></div>
+        </div>
 
-    <h3>🏆 Leaderboard (Ranking)</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Nama</th>
-                <th>XP</th>
-                <th>Tahap</th>
-            </tr>
-        </thead>
-        <tbody id="leaderboard-body">
-            </tbody>
-    </table>
-    
-    <button onclick="resetData()" style="margin-top: 20px; font-size: 10px; opacity: 0.5;">Reset Semua Data</button>
+        <h4>🏆 Leaderboard</h4>
+        <table>
+            <thead><tr><th>Nama</th><th>Mata XP</th></tr></thead>
+            <tbody id="leaderboard-body"></tbody>
+        </table>
+        
+        <button onclick="logout()" style="background:#eee; margin-top:20px; width: 40%;">Log Keluar</button>
+    </div>
+
+    <div id="admin-section" class="hidden">
+        <h2 style="color: var(--admin);">🛠️ Panel Cikgu</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 30px;"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
+                    <th>Nama Pelajar</th>
+                    <th>XP</th>
+                </tr>
+            </thead>
+            <tbody id="admin-data-body"></tbody>
+        </table>
+        <button onclick="bulkCheckIn()" style="background: var(--success); color: white; margin-top: 20px;">✅ Sahkan Kehadiran (+10 XP)</button>
+        <button onclick="logout()" style="background:#eee; margin-top:20px;">Log Keluar</button>
+    </div>
 </div>
 
-
-
 <script>
-    // 1. Inisialisasi Data (Jika tiada dalam LocalStorage, buat baru)
-    let gameData = JSON.parse(localStorage.getItem('quest_data')) || {
-        currentUser: { id: 1, name: "Pelajar 1", xp: 0 },
-        attendanceLog: []
-    };
+    // --- AUDIO DATA (BASE64) ---
+    // Bunyi "Ding" Happy
+    const soundSuccess = new Audio("https://actions.google.com/sounds/v1/cartoon/clink_clank.ogg");
+    // Bunyi "Pop" Ceria
+    const soundNote = new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg");
 
-    // 2. Fungsi Papar Data
-    function updateUI() {
-        document.getElementById('xp-display').innerText = gameData.currentUser.xp;
-        
-        // Kemaskini Leaderboard (Simulasi)
-        const tbody = document.getElementById('leaderboard-body');
-        tbody.innerHTML = `
-            <tr>
-                <td>${gameData.currentUser.name} (Anda)</td>
-                <td>${gameData.currentUser.xp}</td>
-                <td><span class="badge">${getBadge(gameData.currentUser.xp)}</span></td>
-            </tr>
-            <tr><td>Alif (Bot)</td><td>50</td><td>Novice</td></tr>
-            <tr><td>Sarah (Bot)</td><td>30</td><td>Novice</td></tr>
-        `;
-        
-        // Simpan setiap kali ada perubahan
-        localStorage.setItem('quest_data', JSON.stringify(gameData));
+    function playSuccess() { soundSuccess.currentTime = 0; soundSuccess.play(); }
+    function playNote() { soundNote.currentTime = 0; soundNote.play(); }
+
+    // --- DATA & CONFIG ---
+    const materials = [
+        { id: "note1", title: "Nota 2.3: Reka Bentuk Elektrik", link: "#", xp: 5 },
+        { id: "note2", title: "Video Invensi VS Inovasi", link: "#", xp: 10 }
+    ];
+
+    let db = JSON.parse(localStorage.getItem('quest_db')) || { users: [], currentUser: null, isAdmin: false };
+
+    function saveDB() {
+        localStorage.setItem('quest_db', JSON.stringify(db));
+        updateUI();
     }
 
-    // 3. Logik Tentukan Badge
-    function getBadge(xp) {
-        if (xp >= 100) return "Master";
-        if (xp >= 50) return "Warrior";
-        return "Novice";
+    // --- LOGIK UTAMA ---
+    function handleAuth() {
+        const name = document.getElementById('username').value.trim();
+        const pass = document.getElementById('password').value.trim();
+        if (name === 'admin' && pass === 'admin') {
+            db.currentUser = 'Guru Admin'; db.isAdmin = true;
+        } else if (name) {
+            let user = db.users.find(u => u.name.toLowerCase() === name.toLowerCase());
+            if (!user) {
+                user = { name: name, xp: 0, attendance: [], readNotes: [] };
+                db.users.push(user);
+            }
+            db.currentUser = user.name; db.isAdmin = false;
+        } else { return alert("Sila masukkan nama!"); }
+        saveDB();
     }
 
-    // 4. Fungsi Check-in
-    function performCheckin() {
+    function checkIn() {
+        const user = db.users.find(u => u.name === db.currentUser);
         const today = new Date().toDateString();
-        
-        if (gameData.attendanceLog.includes(today)) {
-            document.getElementById('msg').innerText = "❌ Anda sudah hadir hari ini!";
-            document.getElementById('msg').style.color = "red";
+        if (user.attendance.includes(today)) {
+            alert("Sudah hadir hari ini!");
         } else {
-            gameData.currentUser.xp += 10;
-            gameData.attendanceLog.push(today);
-            document.getElementById('msg').innerText = "✅ Tahniah! +10 XP Berjaya!";
-            document.getElementById('msg').style.color = "green";
-            updateUI();
+            user.xp += 10;
+            user.attendance.push(today);
+            playSuccess(); // MAIN BUNYI HAPPY
+            saveDB();
         }
     }
 
-    // Fungsi Reset (Untuk tujuan testing)
-    function resetData() {
-        localStorage.removeItem('quest_data');
-        location.reload();
+    function readNote(id, xp) {
+        const user = db.users.find(u => u.name === db.currentUser);
+        if (!user.readNotes) user.readNotes = [];
+        if (!user.readNotes.includes(id)) {
+            user.xp += xp;
+            user.readNotes.push(id);
+            playNote(); // MAIN BUNYI POP
+            saveDB();
+        }
     }
 
-    // Jalankan paparan awal
+    // --- ADMIN FUNCTIONS ---
+    function toggleSelectAll(source) {
+        const checkboxes = document.getElementsByName('tick-murid');
+        checkboxes.forEach(cb => { if(!cb.disabled) cb.checked = source.checked; });
+    }
+
+    function bulkCheckIn() {
+        const today = new Date().toDateString();
+        let added = 0;
+        document.getElementsByName('tick-murid').forEach(cb => {
+            if (cb.checked && !cb.disabled) {
+                const user = db.users.find(u => u.name === cb.value);
+                user.xp += 10;
+                user.attendance.push(today);
+                added++;
+            }
+        });
+        if(added > 0) { playSuccess(); saveDB(); }
+    }
+
+    // --- RENDER UI ---
+    function updateUI() {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('game-section').classList.add('hidden');
+        document.getElementById('admin-section').classList.add('hidden');
+
+        if (!db.currentUser) {
+            document.getElementById('auth-section').classList.remove('hidden');
+        } else if (db.isAdmin) {
+            document.getElementById('admin-section').classList.remove('hidden');
+            renderAdmin();
+        } else {
+            document.getElementById('game-section').classList.remove('hidden');
+            renderStudent();
+        }
+    }
+
+    function renderStudent() {
+        const user = db.users.find(u => u.name === db.currentUser);
+        document.getElementById('display-name').innerText = user.name;
+        document.getElementById('display-xp').innerText = user.xp;
+        document.getElementById('badge-rank').innerText = user.xp >= 100 ? "🏆 Master" : (user.xp >= 50 ? "⚔️ Warrior" : "🌱 Novice");
+
+        const readList = user.readNotes || [];
+        document.getElementById('notes-list').innerHTML = materials.map(m => `
+            <div class="note-item ${readList.includes(m.id) ? 'note-done' : ''}">
+                <span>${readList.includes(m.id) ? '✅' : '📖'} ${m.title}</span>
+                <a href="${m.link}" onclick="readNote('${m.id}', ${m.xp})" target="_blank" style="color: var(--primary); font-weight:bold;">
+                    ${readList.includes(m.id) ? 'Dah Baca' : 'Mula (+'+m.xp+'XP)'}
+                </a>
+            </div>
+        `).join('');
+
+        const sorted = [...db.users].sort((a,b) => b.xp - a.xp).slice(0,5);
+        document.getElementById('leaderboard-body').innerHTML = sorted.map(u => `
+            <tr><td>${u.name}</td><td>${u.xp} ⭐</td></tr>
+        `).join('');
+    }
+
+    function renderAdmin() {
+        const today = new Date().toDateString();
+        document.getElementById('admin-data-body').innerHTML = db.users.map(u => {
+            const isDone = u.attendance.includes(today);
+            return `
+                <tr class="${isDone ? 'row-present' : ''}">
+                    <td><input type="checkbox" name="tick-murid" value="${u.name}" ${isDone ? 'disabled checked' : ''}></td>
+                    <td>${u.name}</td>
+                    <td>${u.xp} ⭐</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function logout() { db.currentUser = null; db.isAdmin = false; saveDB(); }
+    function resetSystem() { if(confirm("Padam semua?")) { localStorage.removeItem('quest_db'); location.reload(); } }
+
     updateUI();
 </script>
-
 </body>
 </html>
