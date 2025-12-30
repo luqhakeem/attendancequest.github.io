@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Quest</title>
+    <title>Attendance Quest - Long Happy Sounds</title>
     <style>
         :root { --primary: #4a90e2; --success: #2ecc71; --admin: #e74c3c; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
@@ -12,16 +12,16 @@
         button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { opacity: 0.9; transform: scale(0.98); background: #eee; }
         .btn-login { background: var(--primary); color: white; }
-        .btn-checkin { background: var(--success); color: white; margin-bottom: 15px; font-size: 1.1rem; }
+        .btn-checkin { background: var(--success); color: white; margin-bottom: 15px; font-size: 1.1rem; border-bottom: 4px solid #27ae60; }
         .user-card { background: #e8f4fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--primary); }
         .xp-display { font-size: 2.2rem; color: var(--primary); font-weight: bold; }
         .hidden { display: none; }
         table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 0.85rem; background: white; }
         table th, table td { padding: 12px; border: 1px solid #eee; text-align: left; }
         .row-present { background: #eaffea !important; }
-        .note-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #ddd; background: #fffbe6; }
-        .note-done { background: #f0f0f0; border-color: #eee; color: #888; }
-    </style>
+        .note-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #ddd; background: #fffbe6; border-left: 4px solid #f1c40f; }
+        .note-done { background: #f0f0f0; border-color: #eee; color: #888; border-left: 4px solid #ccc; }
+    </small>
 </head>
 <body>
 
@@ -41,7 +41,7 @@
             <div id="badge-rank" style="font-weight: bold; color: #666;">Novice</div>
         </div>
 
-        <button class="btn-checkin" onclick="checkIn()">Misi: Hadir Hari Ini (+10 XP)</button>
+        <button class="btn-checkin" onclick="checkIn()">✅ Misi: Hadir Hari Ini (+10 XP)</button>
         
         <div style="text-align: left; margin-top: 20px;">
             <h4>📚 Bahan Belajar (XP Tambahan)</h4>
@@ -49,17 +49,14 @@
         </div>
 
         <h4>🏆 Leaderboard</h4>
-        <table>
-            <thead><tr><th>Nama</th><th>Mata XP</th></tr></thead>
-            <tbody id="leaderboard-body"></tbody>
-        </table>
+        <tbody id="leaderboard-body"></tbody>
         
         <button onclick="logout()" style="background:#eee; margin-top:20px; width: 40%;">Log Keluar</button>
     </div>
 
     <div id="admin-section" class="hidden">
         <h2 style="color: var(--admin);">🛠️ Panel Cikgu</h2>
-        <table>
+        <table id="admin-table">
             <thead>
                 <tr>
                     <th style="width: 30px;"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
@@ -69,25 +66,31 @@
             </thead>
             <tbody id="admin-data-body"></tbody>
         </table>
-        <button onclick="bulkCheckIn()" style="background: var(--success); color: white; margin-top: 20px;">✅ Sahkan Kehadiran (+10 XP)</button>
+        <button onclick="bulkCheckIn()" style="background: var(--success); color: white; margin-top: 20px;">🎶 Sahkan Kehadiran Pukal</button>
         <button onclick="logout()" style="background:#eee; margin-top:20px;">Log Keluar</button>
     </div>
 </div>
 
 <script>
-    // --- AUDIO DATA (BASE64) ---
-    // Bunyi "Ding" Happy
-    const soundSuccess = new Audio("https://actions.google.com/sounds/v1/cartoon/clink_clank.ogg");
-    // Bunyi "Pop" Ceria
-    const soundNote = new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg");
+    // --- AUDIO CONFIG (Durasi 2-3 saat) ---
+    // Menggunakan bunyi Fanfare/Tada yang lebih panjang dan ceria
+    const soundSuccess = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"); // Bunyi Winning Fanfare
+    const soundNote = new Audio("https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"); // Bunyi Magic/Achievement
 
-    function playSuccess() { soundSuccess.currentTime = 0; soundSuccess.play(); }
-    function playNote() { soundNote.currentTime = 0; soundNote.play(); }
+    function playHappySuccess() { 
+        soundSuccess.currentTime = 0; 
+        soundSuccess.play().catch(e => console.log("Audio play blocked by browser. Click anywhere first."));
+    }
+    
+    function playHappyNote() { 
+        soundNote.currentTime = 0; 
+        soundNote.play().catch(e => console.log("Audio play blocked by browser."));
+    }
 
-    // --- DATA & CONFIG ---
+    // --- DATA MANAGEMENT ---
     const materials = [
-        { id: "note1", title: "Nota 2.3: Reka Bentuk Elektrik", link: "#", xp: 5 },
-        { id: "note2", title: "Video Invensi VS Inovasi", link: "#", xp: 10 }
+        { id: "note1", title: "Nota Ekosistem", link: "#", xp: 5 },
+        { id: "note2", title: "Video Fotosintesis", link: "#", xp: 10 }
     ];
 
     let db = JSON.parse(localStorage.getItem('quest_db')) || { users: [], currentUser: null, isAdmin: false };
@@ -97,7 +100,7 @@
         updateUI();
     }
 
-    // --- LOGIK UTAMA ---
+    // --- LOGIK AUTH ---
     function handleAuth() {
         const name = document.getElementById('username').value.trim();
         const pass = document.getElementById('password').value.trim();
@@ -114,16 +117,18 @@
         saveDB();
     }
 
+    // --- GAMEPLAY FUNCTIONS ---
     function checkIn() {
         const user = db.users.find(u => u.name === db.currentUser);
         const today = new Date().toDateString();
         if (user.attendance.includes(today)) {
-            alert("Sudah hadir hari ini!");
+            alert("Misi sudah selesai untuk hari ini!");
         } else {
             user.xp += 10;
             user.attendance.push(today);
-            playSuccess(); // MAIN BUNYI HAPPY
+            playHappySuccess(); // Bunyi Panjang (Success)
             saveDB();
+            alert("🎉 TAHNIAH! Kehadiran direkodkan!");
         }
     }
 
@@ -133,12 +138,12 @@
         if (!user.readNotes.includes(id)) {
             user.xp += xp;
             user.readNotes.push(id);
-            playNote(); // MAIN BUNYI POP
+            playHappyNote(); // Bunyi Panjang (Note/Magic)
             saveDB();
         }
     }
 
-    // --- ADMIN FUNCTIONS ---
+    // --- ADMIN BULK ---
     function toggleSelectAll(source) {
         const checkboxes = document.getElementsByName('tick-murid');
         checkboxes.forEach(cb => { if(!cb.disabled) cb.checked = source.checked; });
@@ -155,7 +160,11 @@
                 added++;
             }
         });
-        if(added > 0) { playSuccess(); saveDB(); }
+        if(added > 0) { 
+            playHappySuccess(); // Bunyi Fanfare untuk Cikgu
+            saveDB(); 
+            alert("Berjaya mendaftarkan " + added + " pelajar!");
+        }
     }
 
     // --- RENDER UI ---
@@ -186,15 +195,15 @@
             <div class="note-item ${readList.includes(m.id) ? 'note-done' : ''}">
                 <span>${readList.includes(m.id) ? '✅' : '📖'} ${m.title}</span>
                 <a href="${m.link}" onclick="readNote('${m.id}', ${m.xp})" target="_blank" style="color: var(--primary); font-weight:bold;">
-                    ${readList.includes(m.id) ? 'Dah Baca' : 'Mula (+'+m.xp+'XP)'}
+                    ${readList.includes(m.id) ? 'Sudah Selesai' : 'Mula Baca (+'+m.xp+' XP)'}
                 </a>
             </div>
         `).join('');
 
         const sorted = [...db.users].sort((a,b) => b.xp - a.xp).slice(0,5);
-        document.getElementById('leaderboard-body').innerHTML = sorted.map(u => `
-            <tr><td>${u.name}</td><td>${u.xp} ⭐</td></tr>
-        `).join('');
+        const lBody = document.getElementById('leaderboard-body');
+        lBody.innerHTML = "<table><thead><tr><th>Nama</th><th>XP</th></tr></thead><tbody>" + 
+            sorted.map(u => `<tr><td>${u.name}</td><td>${u.xp} ⭐</td></tr>`).join('') + "</tbody></table>";
     }
 
     function renderAdmin() {
@@ -212,7 +221,6 @@
     }
 
     function logout() { db.currentUser = null; db.isAdmin = false; saveDB(); }
-    function resetSystem() { if(confirm("Padam semua?")) { localStorage.removeItem('quest_db'); location.reload(); } }
 
     updateUI();
 </script>
