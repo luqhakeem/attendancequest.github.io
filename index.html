@@ -3,36 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Quest - Scrollable Edition</title>
+    <title>Attendance Quest - Fixed Audio</title>
     <style>
         :root { --primary: #4a90e2; --success: #2ecc71; --admin: #e74c3c; --bg: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 550px; text-align: center; }
-        
-        /* Dashboard Styling */
         .user-card { background: #e8f4fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid var(--primary); }
         .xp-display { font-size: 2.2rem; color: var(--primary); font-weight: bold; }
-        
-        /* SCROLLABLE LEADERBOARD CSS */
-        .leaderboard-wrapper { 
-            max-height: 250px; /* Had ketinggian sebelum scroll muncul */
-            overflow-y: auto; 
-            border: 1px solid #eee;
-            border-radius: 10px;
-            margin-top: 10px;
-        }
+        .leaderboard-wrapper { max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 10px; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        table th { position: sticky; top: 0; background: #f8f9fa; z-index: 1; }
-        table th, table td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        
-        /* Scrollbar Styling (Optional - Biar nampak moden) */
-        .leaderboard-wrapper::-webkit-scrollbar { width: 6px; }
-        .leaderboard-wrapper::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
-
-        /* Others */
+        table th { position: sticky; top: 0; background: #f8f9fa; z-index: 1; padding: 10px; }
+        table td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
         input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
-        .btn-checkin { background: var(--success); color: white; margin-bottom: 15px; border-bottom: 4px solid #27ae60; }
+        .btn-checkin { background: var(--success); color: white; border-bottom: 4px solid #27ae60; }
         .hidden { display: none; }
         .note-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #ddd; background: #fffbe6; }
         .note-done { background: #f0f0f0; color: #888; }
@@ -53,56 +37,52 @@
             <h3 id="display-name">---</h3>
             <div class="xp-display"><span id="display-xp">0</span> ⭐</div>
         </div>
-
         <button class="btn-checkin" onclick="checkIn()">✅ Misi: Hadir Hari Ini (+10 XP)</button>
-        
         <div style="text-align: left; margin-top: 20px;">
             <h4>📚 Misi Nota (XP Tambahan)</h4>
             <div id="notes-list"></div>
         </div>
-
-        <h4>🏆 Leaderboard (Semua Pelajar)</h4>
+        <h4>🏆 Leaderboard</h4>
         <div class="leaderboard-wrapper">
             <table>
-                <thead>
-                    <tr><th>Ranking</th><th>Nama</th><th>Mata XP</th></tr>
-                </thead>
+                <thead><tr><th>Ranking</th><th>Nama</th><th>XP</th></tr></thead>
                 <tbody id="leaderboard-body"></tbody>
             </table>
         </div>
-        
         <button onclick="logout()" style="background:#eee; margin-top:20px;">Log Keluar</button>
     </div>
 
     <div id="admin-section" class="hidden">
-        <h2 style="color: var(--admin);">🛠️ Panel Kawalan Cikgu</h2>
+        <h2 style="color: var(--admin);">🛠️ Panel Cikgu</h2>
         <div class="leaderboard-wrapper" style="max-height: 350px;">
             <table>
-                <thead>
-                    <tr>
-                        <th style="width: 20px;"><input type="checkbox" onclick="toggleSelectAll(this)"></th>
-                        <th>Nama</th>
-                        <th>Status Hadir</th>
-                    </tr>
-                </thead>
+                <thead><tr><th><input type="checkbox" onclick="toggleSelectAll(this)"></th><th>Nama</th><th>Status</th></tr></thead>
                 <tbody id="admin-data-body"></tbody>
             </table>
         </div>
-        <button onclick="bulkCheckIn()" style="background: var(--success); color: white; margin-top: 20px;">🎶 Sahkan Kehadiran Pilihan</button>
+        <button onclick="bulkCheckIn()" style="background: var(--success); color: white; margin-top: 20px;">🎶 Sahkan Kehadiran</button>
         <button onclick="logout()" style="background:#eee; margin-top:10px;">Log Keluar</button>
     </div>
 </div>
 
 <script>
-    // --- AUDIO ---
-    const soundSuccess = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"); 
-    const soundNote = new Audio("https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3");
+    // --- AUDIO FIX ---
+    // Menggunakan link audio alternatif yang lebih stabil (MP3 format)
+    const soundSuccess = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"); // Bunyi Loceng (3 saat)
+    const soundNote = new Audio("https://www.soundjay.com/misc/sounds/magic-chime-01.mp3"); // Bunyi Magic (2 saat)
+
+    // Fungsi untuk memastikan audio dimainkan (Handle browser restriction)
+    function playAudio(audioObj) {
+        audioObj.currentTime = 0;
+        audioObj.play().catch(error => {
+            console.log("Audio dimulakan selepas interaksi pertama.");
+        });
+    }
 
     // --- DATA ---
     const materials = [
-        { id: "n1", title: "Nota 2.3: Reka Bentuk Elektrik", link: "#", xp: 5 },
-        { id: "n2", title: "Video Invensi VS Inovasi", link: "#", xp: 10 },
-        { id: "n3", title: "Kuiz Bab 1", link: "#", xp: 5 }
+        { id: "n1", title: "Nota Ekosistem", link: "https://google.com", xp: 5 },
+        { id: "n2", title: "Video Fotosintesis", link: "https://youtube.com", xp: 10 }
     ];
 
     let db = JSON.parse(localStorage.getItem('quest_db')) || { users: [], currentUser: null, isAdmin: false };
@@ -112,7 +92,6 @@
         updateUI();
     }
 
-    // --- AUTH ---
     function handleAuth() {
         const name = document.getElementById('username').value.trim();
         const pass = document.getElementById('password').value.trim();
@@ -129,14 +108,13 @@
         saveDB();
     }
 
-    // --- LOGIC ---
     function checkIn() {
         const user = db.users.find(u => u.name === db.currentUser);
         const today = new Date().toDateString();
         if (user.attendance.includes(today)) return alert("Dah hadir!");
         user.xp += 10;
         user.attendance.push(today);
-        soundSuccess.play();
+        playAudio(soundSuccess); // Bunyi 1
         saveDB();
     }
 
@@ -145,9 +123,51 @@
         if (!user.readNotes.includes(id)) {
             user.xp += xp;
             user.readNotes.push(id);
-            soundNote.play();
+            playAudio(soundNote); // Bunyi 2
             saveDB();
         }
+    }
+
+    // --- UI RENDER ---
+    function updateUI() {
+        document.getElementById('auth-section').classList.toggle('hidden', !!db.currentUser);
+        document.getElementById('game-section').classList.toggle('hidden', !db.currentUser || db.isAdmin);
+        document.getElementById('admin-section').classList.toggle('hidden', !db.isAdmin);
+
+        if (db.currentUser && !db.isAdmin) renderStudent();
+        if (db.isAdmin) renderAdmin();
+    }
+
+    function renderStudent() {
+        const user = db.users.find(u => u.name === db.currentUser);
+        document.getElementById('display-name').innerText = user.name;
+        document.getElementById('display-xp').innerText = user.xp;
+
+        document.getElementById('notes-list').innerHTML = materials.map(m => `
+            <div class="note-item ${user.readNotes.includes(m.id) ? 'note-done' : ''}">
+                <span>${m.title}</span>
+                <a href="${m.link}" onclick="readNote('${m.id}', ${m.xp})" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">
+                    ${user.readNotes.includes(m.id) ? 'Selesai' : 'Buka (+'+m.xp+' XP)'}
+                </a>
+            </div>
+        `).join('');
+
+        const sorted = [...db.users].sort((a,b) => b.xp - a.xp);
+        document.getElementById('leaderboard-body').innerHTML = sorted.map((u, i) => `
+            <tr style="${u.name === db.currentUser ? 'background:#fff9c4;' : ''}">
+                <td>#${i+1}</td><td>${u.name}</td><td>${u.xp} ⭐</td>
+            </tr>
+        `).join('');
+    }
+
+    function renderAdmin() {
+        const today = new Date().toDateString();
+        document.getElementById('admin-data-body').innerHTML = db.users.map(u => `
+            <tr style="${u.attendance.includes(today) ? 'background:#eaffea;' : ''}">
+                <td><input type="checkbox" name="tick-murid" value="${u.name}" ${u.attendance.includes(today) ? 'disabled checked' : ''}></td>
+                <td>${u.name}</td><td>${u.attendance.includes(today) ? 'Hadir' : 'Belum'}</td>
+            </tr>
+        `).join('');
     }
 
     function toggleSelectAll(source) {
@@ -160,66 +180,11 @@
         document.getElementsByName('tick-murid').forEach(cb => {
             if (cb.checked && !cb.disabled) {
                 const user = db.users.find(u => u.name === cb.value);
-                user.xp += 10;
-                user.attendance.push(today);
+                user.xp += 10; user.attendance.push(today);
                 added++;
             }
         });
-        if(added > 0) { soundSuccess.play(); saveDB(); }
-    }
-
-    // --- UI ---
-    function updateUI() {
-        document.getElementById('auth-section').classList.add('hidden');
-        document.getElementById('game-section').classList.add('hidden');
-        document.getElementById('admin-section').classList.add('hidden');
-
-        if (!db.currentUser) {
-            document.getElementById('auth-section').classList.remove('hidden');
-        } else if (db.isAdmin) {
-            document.getElementById('admin-section').classList.remove('hidden');
-            renderAdmin();
-        } else {
-            document.getElementById('game-section').classList.remove('hidden');
-            renderStudent();
-        }
-    }
-
-    function renderStudent() {
-        const user = db.users.find(u => u.name === db.currentUser);
-        document.getElementById('display-name').innerText = user.name;
-        document.getElementById('display-xp').innerText = user.xp;
-
-        // Notes
-        document.getElementById('notes-list').innerHTML = materials.map(m => `
-            <div class="note-item ${user.readNotes.includes(m.id) ? 'note-done' : ''}">
-                <span>${m.title}</span>
-                <a href="${m.link}" onclick="readNote('${m.id}', ${m.xp})" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">
-                    ${user.readNotes.includes(m.id) ? 'Selesai' : 'Mula (+'+m.xp+' XP)'}
-                </a>
-            </div>
-        `).join('');
-
-        // Leaderboard (Scrollable)
-        const sorted = [...db.users].sort((a,b) => b.xp - a.xp);
-        document.getElementById('leaderboard-body').innerHTML = sorted.map((u, index) => `
-            <tr style="${u.name === db.currentUser ? 'background:#fff9c4;' : ''}">
-                <td>#${index + 1}</td>
-                <td>${u.name}</td>
-                <td>${u.xp} ⭐</td>
-            </tr>
-        `).join('');
-    }
-
-    function renderAdmin() {
-        const today = new Date().toDateString();
-        document.getElementById('admin-data-body').innerHTML = db.users.map(u => `
-            <tr style="${u.attendance.includes(today) ? 'background:#eaffea;' : ''}">
-                <td><input type="checkbox" name="tick-murid" value="${u.name}" ${u.attendance.includes(today) ? 'disabled checked' : ''}></td>
-                <td>${u.name}</td>
-                <td>${u.attendance.includes(today) ? 'Hadir' : 'Belum Hadir'}</td>
-            </tr>
-        `).join('');
+        if(added > 0) { playAudio(soundSuccess); saveDB(); }
     }
 
     function logout() { db.currentUser = null; db.isAdmin = false; saveDB(); }
